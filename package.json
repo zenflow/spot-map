@@ -1,0 +1,28 @@
+{
+  "name": "spot-map",
+  "version": "0.0.1",
+  "description": "plot your trek on a map for all to see, for free, using your SPOT beacon device and an email account on your SPOT contact list",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zenflow/spot-map"
+  },
+  "keywords": [
+    "spot",
+    "beacon",
+    "map",
+    "gps",
+    "locator",
+    "trek",
+    "voyage",
+    "adventure"
+  ],
+  "author": "Matthew Brunetti",
+  "license": "GPL",
+  "bugs": {
+    "url": "https://github.com/zenflow/spot-map/issues"
+  }
+}
