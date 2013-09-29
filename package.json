@@ -26,8 +26,9 @@
     "url": "https://github.com/zenflow/spot-map/issues"
   },
   "dependencies": {
-    "poplib": "~0.1.5",
     "express": "~3.4.0",
-    "underscore": "~1.5.2"
+    "underscore": "~1.5.2",
+    "imap": "~0.8.3",
+    "mimelib": "~0.2.12"
   }
 }

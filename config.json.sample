@@ -1,7 +1,10 @@
 {
 	"port": 3000,
-	"mail_port": 995,
-	"mail_host": "pop-mail.outlook.com",
-	"mail_username": "matt_5001@hotmail.com",
-	"mail_password": "you-wish-sucka"
+    "imap": {
+        "host": "imap.gmail.com",
+        "port": 993,
+        "user": "omnipresent.robot@gmail.com",
+        "pass": "you wish sucka",
+        "box": "INBOX"
+    }
 }
