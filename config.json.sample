@@ -6,5 +6,10 @@
         "user": "omnipresent.robot@gmail.com",
         "pass": "you wish sucka",
         "box": "INBOX"
-    }
+    },
+    "criteria": [
+        ["SUBJECT", "message from SPOT"],
+        ["ALL"]
+    ],
+    "interval": 30
 }

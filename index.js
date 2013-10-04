@@ -1,10 +1,3 @@
-var criteria = [
-    ['SUBJECT', 'message from SPOT free4life'],
-    ['ALL']
-];
-var interval = 1000*60*30 ;
-
-
 var path = require('path');
 var express = require('express');
 var ko = require('knockout');
@@ -15,14 +8,13 @@ var handle_error = function(error){
     console.error('error', error);
 };
 
-
 var points = ko.observable([]);
 var json = ko.computed(function(){
     return JSON.stringify({
         points: points()
     });
 });
-var imap_query = new ImapQuery(config.imap, criteria);
+var imap_query = new ImapQuery(config.imap, config.criteria);
 var checkImapQuery = function(){
     imap_query.check(function(error, updated){
         if (error){handle_error(error); return;}
@@ -44,8 +36,7 @@ var checkImapQuery = function(){
     });
 };
 checkImapQuery();
-setInterval(checkImapQuery, interval);
-
+setInterval(checkImapQuery, 1000*60*config.interval);
 
 var app = express();
 app.use(express.logger('dev')); // ***********************
