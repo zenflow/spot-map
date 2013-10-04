@@ -28,6 +28,7 @@
   "dependencies": {
     "express": "~3.4.0",
     "imap": "~0.8.3",
-    "mimelib": "~0.2.12"
+    "mimelib": "~0.2.12",
+    "knockout": "~2.3.0"
   }
 }
