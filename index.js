@@ -28,7 +28,6 @@ var checkImapQuery = function(){
         if (error){handle_error(error); return;}
         if (!updated){return;}
         points(imap_query.messages().map(function(message){
-            console.log(message.uid, message.subject);
             var info = {};
             ['Latitude', 'Longitude', 'GPS location Date/Time'].forEach(function(key){
                 var start = message.text.indexOf(key+':')+key.length+1;
