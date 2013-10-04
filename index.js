@@ -1,39 +1,52 @@
 var criteria = [
-    ['FROM', 'matt_5001@hotmail.com'],
+    ['SUBJECT', 'message from SPOT free4life'],
     ['ALL']
 ];
+var interval = 1000*60*30 ;
+
 
 var path = require('path');
 var express = require('express');
+var ko = require('knockout');
 var config = require('./config');
 var ImapQuery = require('./ImapQuery');
 
-var data_points = [];
+var handle_error = function(error){
+    console.error('error', error);
+};
 
+
+var points = ko.observable([]);
+var json = ko.computed(function(){
+    return JSON.stringify({
+        points: points()
+    });
+});
 var imap_query = new ImapQuery(config.imap, criteria);
-imap_query.on('error', function(error){
-    throw error;
-});
-imap_query.on('message', function(message){
-    if (!message){
-        return;
-    }
-    var info = {};
-    ['Latitude', 'Longitude', 'GPS location Date/Time'].forEach(function(key){
-        var start = message.text.indexOf(key+':')+key.length+1;
-        var end = message.text.indexOf('\r\n', start);
-        info[key] = message.text.substring(start, end);
+var checkImapQuery = function(){
+    imap_query.check(function(error, updated){
+        if (error){handle_error(error); return;}
+        if (!updated){return;}
+        points(imap_query.messages().map(function(message){
+            console.log(message.uid, message.subject);
+            var info = {};
+            ['Latitude', 'Longitude', 'GPS location Date/Time'].forEach(function(key){
+                var start = message.text.indexOf(key+':')+key.length+1;
+                var end = message.text.indexOf('\r\n', start);
+                info[key] = message.text.substring(start, end);
+            });
+            return {
+                latlng: [Number(info['Latitude']), Number(info['Longitude'])],
+                when: new Date(info['GPS location Date/Time'])
+            };
+        }).sort(function(a, b){
+            return a.when - b.when;
+        }));
     });
-    data_points.push({
-        latitude: Number(info['Latitude']),
-        longitude: Number(info['Longitude']),
-        when: new Date(info['GPS location Date/Time'])
-    });
-    data_points.sort(function(a, b){
-        return a.when > b.when ? 1 : -1;
-    });
-});
-imap_query.check();
+};
+checkImapQuery();
+setInterval(checkImapQuery, interval);
+
 
 var app = express();
 app.use(express.logger('dev')); // ***********************
@@ -43,16 +56,14 @@ app.use(express.bodyParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(app.router);
 app.get('/data.json', function(req, res){
-    res.send(JSON.stringify({
-        points: data_points
-    }));
+    res.send(json());
 });
 app.get('/*', function(req, res){
 	res.send(404);
 });
 app.use(function(err, req, res, next){
     res.send(500);
-	console.error('internal error!', err);
+	handle_error(err);
 });
 app.listen(config.port);
 console.log('Listening on port ' + config.port);

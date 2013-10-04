@@ -4,21 +4,27 @@ var util = require('util');
 var mimelib = require('mimelib');
 var Imap = require('imap');
 
-var stream_to_string = function(stream, cb){
-    var buffer = '';
-    stream.on('data', function(chunk) {
-        buffer += chunk.toString('utf8');
-    });
-    stream.once('end', function() {
-        cb(null, buffer);
-    });
+var findWhere = function(list, properties){
+    for (var i = 0; i < list.length; i++){
+        var is_match = true;
+        for (var key in properties){
+            if (list[i][key]!=properties[key]){
+                is_match = false;
+                break;
+            }
+        }
+        if (is_match){
+            return list[i];
+        }
+    }
+    return undefined;
 };
+
 var trim_str_by_char = function(str, char){
     for (var start = 0; str[start]==char; start++){}
     for (var end = start; str[end]!=char; end++){}
     return str.substring(start, end);
 }
-
 var parse_email = function(text, params){
     var type = params['Content-Type'];
     if (type.split('/')[0]=='multipart'){
@@ -64,6 +70,15 @@ var parse_email = function(text, params){
             disposition: disposition
         };
     }
+};
+var stream_to_string = function(stream, cb){
+    var buffer = '';
+    stream.on('data', function(chunk) {
+        buffer += chunk.toString('utf8');
+    });
+    stream.once('end', function() {
+        cb(null, buffer);
+    });
 };
 var body_names = ['HEADER'/*.FIELDS (FROM TO SUBJECT DATE CONTENT-TYPE CONTENT-TRANSFER-ENCODING CONTENT-DISPOSITION)'*/, 'TEXT'];
 var fetch_email = function(imap, uids, cb){
@@ -172,16 +187,17 @@ var ImapQuery = function(mailbox, criteria){
     var self = this;
     self._account = mailbox;
     self._criteria = criteria;
-    self._messages = {};
+    self._messages = [];
 };
 //inheritance
 util.inherits(ImapQuery, events.EventEmitter);
 //public members
 ImapQuery.prototype.messages = function(){
-    return this._messages;
+    return this._messages.slice();
 };
 //private members
-ImapQuery.prototype.check = function(){
+ImapQuery.prototype.check = function(_cb){
+    var cb = _cb || function(){};
     var self = this;
     var imap = new Imap({
         host: self._account.host,
@@ -191,41 +207,47 @@ ImapQuery.prototype.check = function(){
         tls: true,
         tlsOptions: { rejectUnauthorized: false }
     });
+    var fail = function(error){
+        imap.end();
+        var callback = cb;
+        cb = function(){};
+        callback(error);
+    };
     imap.once('ready', function(){
         imap.openBox(self._account.box, true, function(error, box){
-            if (error){
-                self.emit('error', error);
-                return;
-            }
+            if (error){fail(error); return;}
             imap.search(self._criteria, function(error, uids){
-                if (error){
-                    self.emit('error', error);
-                    return
-                }
-                var uids = uids.filter(function(uid){
-                    return !(uid in self._messages);
+                if (error){fail(error); return;}
+                var old_messages = self._messages.filter(function(message){
+                    return uids.indexOf(message.uid)==-1;
                 });
-                if (!uids.length){
-                    self.emit('message', false);
-                    return;
-                }
-                fetch_email(imap, uids, function(error, message){
-                    if (error){
-                        self.emit('error', error);
-                        return;
-                    }
-                    if (!message){
-                        self.emit('message', false);
-                        return;
-                    }
-                    self._messages[message.uid] = message;
-                    self.emit('message', message);
+                var new_uids = uids.filter(function(uid){
+                    return !findWhere(self._messages, {uid: uid});
+                });
+                var new_messages = [];
+                var done = function(){
+                    imap.end();
+                    old_messages.forEach(function(message){
+                        self._messages.splice(self._messages.indexOf(message), 1);
+                        self.emit('delete', message);
+                    });
+                    new_messages.forEach(function(message){
+                        self._messages.push(message);
+                        self.emit('add', message);
+                    });
+                    cb(null, (old_messages.length>0)||(new_messages.length>0));
+                };
+                if (!new_uids.length){done(); return;}
+                fetch_email(imap, new_uids, function(error, message){
+                    if (error){fail(error); return;}
+                    if (!message){done(); return;}
+                    new_messages.push(message);
                 });
             });
         });
     });
     imap.once('error', function(error) {
-        self.emit('error', error);
+        fail(error);
     });
     imap.connect();
 };
