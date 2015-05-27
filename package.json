@@ -21,7 +21,7 @@
     "adventure"
   ],
   "author": "Matthew Brunetti",
-  "license": "GPL",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/zenflow/spot-map/issues"
   },
