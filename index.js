@@ -2,7 +2,7 @@ var path = require('path');
 var express = require('express');
 var ko = require('knockout');
 var config = require('./config');
-var ImapQuery = require('./ImapQuery');
+var ImapQuery = require('imap-query');
 
 var handle_error = function(error){
     console.error('error', error);
