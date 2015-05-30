@@ -3,9 +3,9 @@ module.exports = {
     imap: {
         host: "imap.gmail.com",
         port: 993,
-        user: "omnipresent.robot@gmail.com",
-        pass: "what am i stupid?",
-        box: "INBOX"
+        box: "INBOX",
+        user: "your.email@gmail.com",
+        password: "your password"
     },
     criteria: [
         ["SUBJECT", "message from SPOT"],

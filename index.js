@@ -16,24 +16,25 @@ var json = ko.computed(function(){
 });
 var imap_query = new ImapQuery(config.imap, config.criteria);
 var checkImapQuery = function(){
-    imap_query.check(function(error, updated){
-        if (error){handle_error(error); return;}
-        if (!updated){return;}
-        points(imap_query.messages().map(function(message){
+    imap_query.check().then(function(changes){
+        if (!changes){return;}
+        var messages = imap_query.messages();
+        var _points = [];
+        for (var uid in messages){
+            var message = messages[uid];
             var info = {};
             ['Latitude', 'Longitude', 'GPS location Date/Time'].forEach(function(key){
-                var start = message.text.indexOf(key+':')+key.length+1;
-                var end = message.text.indexOf('\r\n', start);
-                info[key] = message.text.substring(start, end);
+                var start = message.plaintext.indexOf(key+':')+key.length+1;
+                var end = message.plaintext.indexOf('\r\n', start);
+                info[key] = message.plaintext.substring(start, end);
             });
-            return {
+            _points.push({
                 latlng: [Number(info['Latitude']), Number(info['Longitude'])],
                 when: new Date(info['GPS location Date/Time'])
-            };
-        }).sort(function(a, b){
-            return a.when - b.when;
-        }));
-    });
+            });
+        }
+        points(_points.sort(function(a, b){return a.when - b.when;}));
+    }, handle_error);
 };
 checkImapQuery();
 setInterval(checkImapQuery, 1000*60*config.interval);
